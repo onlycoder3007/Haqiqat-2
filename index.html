@@ -1,0 +1,363 @@
+﻿
+<!DOCTYPE html>
+<html lang="uz">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Rost yoki Jasorat O'yini</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background: linear-gradient(135deg, #89fffd, #ef32d9);
+            color: white;
+            text-align: center;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 600px;
+            margin: 0 auto;
+            padding: 20px;
+            background: rgba(0, 0, 0, 0.7);
+            border-radius: 10px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
+        }
+
+        h1 {
+            font-size: 36px;
+            margin-bottom: 20px;
+        }
+
+        button {
+            background-color: #ff007a;
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            font-size: 18px;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.3s;
+            margin-top: 10px;
+        }
+
+        button:hover {
+            background-color: #ff4da6;
+            transform: scale(1.05);
+        }
+
+        .hidden {
+            display: none;
+        }
+
+        .mode-buttons button {
+            margin: 10px;
+        }
+
+        #playerList {
+            list-style-type: none;
+            padding: 0;
+            margin-top: 10px;
+        }
+
+        #playerList li {
+            background-color: #333;
+            margin: 5px 0;
+            padding: 10px;
+            border-radius: 5px;
+        }
+
+        .input-area {
+            margin: 20px 0;
+        }
+
+        input {
+            padding: 10px;
+            font-size: 16px;
+            border-radius: 5px;
+            border: none;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Rost yoki Jasorat!</h1>
+        <p>O'yinni boshlash uchun rejim tanlang:</p>
+        <div class="mode-buttons">
+            <button id="onlineMode">Online rejim</button>
+            <button id="offlineMode">Offline rejim</button>
+        </div>
+        
+        <div id="gameSection" class="hidden">
+            <h2>O'yinchilar ismlarini kiriting</h2>
+            <div class="input-area">
+                <input type="text" id="playerName" placeholder="O'yinchi ismini kiriting" />
+                <button id="addPlayer">Qo'shish</button>
+            </div>
+
+            <div class="players-list">
+                <h3>O'yinchilar:</h3>
+                <ul id="playerList"></ul>
+            </div>
+
+            <button id="startGame" class="hidden">O'yinni boshlash</button>
+
+            <div id="questionSection" class="hidden">
+                <h2 id="selectedPlayer"></h2>
+                <p>Rost yoki Jasoratni tanlang:</p>
+                <button id="truthButton">Rost</button>
+                <button id="dareButton">Jasorat</button>
+                <p id="question"></p>
+
+                <button id="nextPlayer" class="hidden">Keyingi o'yinchi</button>
+                <div class="input-area">
+                    <button id="addTruthButton">Rost qo'shish</button>
+                    <button id="addDareButton">Jasorat qo'shish</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let players = [];
+        let gameMode = '';
+        let currentPlayerIndex = 0;
+
+        let questionsOnline = [
+            "Sizning eng katta siringiz nima?",
+            "Sizning muhabbatingiz kim?",
+            "Online mode uchun birinchi truth.",
+    "Sizni so'rashni qiziqtirgan narsani ayting.",
+      "Sizni so'rashni qiziqtirgan narsani ayting.",
+    "Sizning eng yaxshi xotirangiz nima?",
+    "Hayotingizdagi eng katta qo'rquvingiz nima?",
+    "Agar bir kun uchun kuch-quvvatga ega bo'lsangiz, nima qilardingiz?",
+    "Sizning eng katta sirlaringizdan birini oching.",
+    "Agar hayotingizda qilgan ishlaringizdan birortasini o'zgartirish mumkin bo'lganida qaysi birini o'zgartirkan bo'lardiz va nega?.",
+    "Sizning hayotizgizda depressiyaga tushib qolgan paytlaringizni ayting.",
+    "Sizni eng ko'p tanqid qilgan odamni nima ish qilib undan o'ch olardiz.",
+    "Hayotingizdagi eng uyatli xatolardan birini ayting yoki vaziyat.",
+   "sizga yengillik agarda siz konstani qo'shiqlaridan bir kuplet aaytib berrsayiz siz keyingi shartni bajarishiz shart emas",
+    "O'ziz haqizda hech kim bilmagan narsani ayting.",
+    "Hayotingizda qilgan eng katta qaror nima?",
+    "Sizga ish qilishga yordam beradigan biror narsa hqida gapiring.",
+    "eng yaqin do'stizning sizga yoqadigan va yoqmaydigan jihatlari.",
+    "hayotingizda sizni eng ko'p xafa qilgan odam kim?",
+    "sizning eng sevimli kino va serialingiz qaysi?",
+    "agarda sizda vaqt mashinasi bo'lsa va unda atigi 5 daqiqa ucha olsangiz qaysi yilga va qaysi kunga borgan bo'lar edingiz ?",
+    "qaysi mashhur inson bilan 1 kun o'tkazishni xohlaysiz va nega?",
+    "Sizning telefoningizda bir kun davomida o'zingizni telefoningiz sifatida tasavvur qilsangiz, kim bilan suhbatlashishni xohlaysiz va nima uchun?",
+    "Agar siz bir kun davomida televizorda ko'rilgan har qanday reklama sifatida yashashga majbur bo'lsangiz, qaysi reklama bo'lar edingiz va nima uchun?",
+    "Sizga bir kun davomida hayvonlar bilan gaplashish imkoniyati berilsa, qaysi hayvon bilan suhbatlashishni xohlaysiz va nima haqida gaplashardingiz?",
+    "Agar siz bir kun davomida boshqa bir odamning “yuzi” bo'lsangiz, kimning yuzi bo'lishni xohlaysiz va nima uchun?",
+    "agar siz bir kun davomida hamma odamning hayolini o'qiy olsayiz kimning hayolini o'qirdiz?",
+    "agar kimdir sizga 3 ta tilak tila desa nima tilardiz?",
+    "Agar siz bir kun davomida biror narsani o'zgartira olsangiz, dunyo yoki hayotingizda qaysi narsani o'zgartirardingiz va nima uchun?",
+    "Agar siz biror narsani o'tmishda yoki kelajakda o'zgartirish imkoniyatiga ega bo'lsangiz, qaysi voqeani o'zgartirardingiz va nima uchun?",
+    "Eng g'alati tushingiz nima edi?",
+    "Bir kunlik hayotingizni kim bilan almashmoqchi bo'lar edingiz?",
+    "Eng katta yolg'oningiz nima?",
+    "Hech qachon biror narsani o'g'irlaganmisiz? Agar shunday bo'lsa, nima edi?",
+    "Maktabda eng qiziq voqeangiz nima?",
+    "Hech qachon noto'g'ri odamga xabar yuborganmisiz? Nima deb yozgandingiz?",
+    "Kimnidir hayratda qoldirish uchun eng g'alati ishni qildingizmi?",
+    "Hech qachon do'stingizning singlisiga oshiq bo'lganmisiz?",
+    "Hech qachon biror narsani qilayotganingizda ushlanib qolganmisiz?",
+    "Hech qachon multfilm qahramoniga oshiq bo'lganmisiz? (agar qiz bola bo'lsangiz uzr va o'g'il bola javob bersin)",
+    "Agar sizda har qanday super kuch bo'lsa, qaysi kuchni tanlardingiz?",
+    "Kimnidir e'tiborini jalb qilish uchun eng g'alati ishni qildingizmi?",
+    "Hayotingizda eng katta bo'lgan janjal.",
+    "Do'stiz sizni birorta qiyin vaiyatda qoldirib ketganmi?",
+    "Har qanday uchta odam bilan, o'lgan yoki tirik, kechki ovqatda uchrashmoqchi bo'lsangiz, kimlarni tanlardingiz?",
+        ];
+
+        let daresOnline = [
+            "Telefoningizdagi oxirgi suratni yuboring!",
+            "Muhabbatingizga 'salom' deb yozing!",
+ "Telefoningizning eng so‘nggi suratini guruhga yuboring.",
+    "O‘zingiz haqingizda qiziqarli bir fakt yozing.",
+    "Biror qiziqarli rasm yuboring.",
+    "Bugungi kuningizni qisqacha tasvirlab bering.",
+    "yaqinda ko'rgan film yoki serialingizni tasvirllab bering.",
+    "sevganingiz yoqtirgan taomni yozing.",
+    "Sevimli mashg‘ulotingizni tavsiflang.",
+    "hayotingizda eng qiziq voqeani ayting.",
+    "Guruhga qiziqarli bir hikoya yozing.",
+    " Sevimli film yoki serialingizdagi sevimli sahnani tasvirlab bering.",
+    "O'zingiz maqsadlaringiz rejalaringizni ayting.",
+    "O‘zingizning eng yaxshi kuningizni yozing.",
+    "Sevimli qo‘shig‘ingizdan bir qatorni yozing.",
+    "O‘zingizning sevimli xobbiingizni baham ko‘ring.",
+    "Bugungi kuningiz qanday o'tdi?",
+    "O‘zingizni qanday qilib stressdan qutqarishingizni yozing.",
+    "Sevimli taomingizni qanday tayyorlashni qisqacha yozing.",
+     "Guruh chatida 1 daqiqa davomida hayvon ovozi yoki boshqa qiziqarli ovozda xabar yuboring.",
+     "Telefoningizda yoki kompyuteringizda 1 daqiqa ichida qiziqarli yoki kulgili rasm chizing va uni guruhga yuboring.",
+    "O'z telegram ismizni MENGA YOZING MEN JAVOB YOZAMAN deb almashtiring.",
+     "Biror yangi yoki noodatiy emojini guruh chatida ishlating va unga mos kulgili sharh bering.",
+       "O'yin yaratuvchisiga o'yin haqida fikrizni yozib yuboring ",
+       "Barcha ishtirokchilarga g'alati savol bering.",
+      "Telegram rasmizni guruhdagi odamlar aytgan rasmga almashtiring",
+        "Guruhga kulgili musiqalarni yuboring",
+    "Tasodifiy va qiziqarli faktni guruh chatida yuboring",
+      "10 soniya davomida nafasingizni ushlab turing. (bir nima bo'lsa men javob bermiman)",
+      " Mashhur shaxs bo'lib, bizning savollarga javob bering.",
+       "1 daqiqa davomida hammani kuldirishga harakat qiling.",
+        "Kimdir sizga qo'shiq aytish uchun qo'shiq tanlashiga ruxsat bering.",
+      "Kimdir sizga o'yin davomida g'alati laqab berishiga ruxsat bering va uni telegram nikizga qo'ying.",
+    "Profil rasmingizni o'zgartiring - 24 soat davomida profil rasmingizni g'alati yoki kulgili bir rasmga o'zgartiring.",
+    "siz yaxshi ko'radigan(sevganizni) insonni tariflang ",
+    "Hayotingizda ko'rgan eng g'alati narsani baham ko'ring - Hayotingizda ko'rgan eng g'alati yoki kulgili narsani qisqacha yozing.",
+    "Kundalik hayotingizdagi kichik sirni ayting - Kundalik hayotingizdagi oddiy, lekin boshqalar bilmaydigan kichik bir sirni yozing.",
+    "Hozir eslay oladigan eng so'nggi kulgili voqeani ayting - So'nggi eslay oladigan kulgili voqeani qisqacha yozing.",
+    "Biror so'z yoki jumlani chatda yozing, lekin u noto'g'ri tushuniladigan darajada qisqa yoki noaniq bo'lsin.",
+    "Google qidiruvga yozgan so'ngi narsangizni bizga skreenshot qilib jo'nating.",
+    "Bitta emoji bilan kayfiyatingizni ifodalang - Hozirgi kayfiyatingizni faqat bitta emoji bilan ifodalang.",
+    "To'rt harfli tasodifiy so'z yozing - Tasodifiy to'rt harfli bir so'zni yozing, lekin uni nima uchun tanlaganingizni tushuntirmang.",
+    "Eng sevimli oy nomini yozing - Sevimli oyingiz qaysi va nima uchun?",
+    "Oddiy, lekin sizni asabiylashtiradigan biror narsani chatda yozing.",
+    "Eng oxirgi kim bilan telefon orqali gaplashdingiz? skreenshot qilib tashlang va nima haqida gaplashganizni ayting.",
+    "Oxirgi ko'rgan tushingizni qisqacha tasvirlab bering.",
+        ];
+
+        let questionsOffline = [
+            "Sizning eng katta qo'rquvingiz nima?",
+            "Hech qachon eng yaqin do'stingizga yolg'on gapirganmisiz?",
+ "Hayotingizdagi eng katta qo'rquvingiz nima?",
+   "Sizning eng katta sirlaringizdan birini oching.",
+     "Agar hayotingizda qilgan ishlaringizdan birortasini o'zgartirish mumkin bo'lganida qaysi birini o'zgartirkan bo'lardiz va nega?.",
+     "Sizning hayotizgizda depressiyaga tushib qolgan paytlaringizni ayting.",
+    "Hayotingizdagi eng uyatli xatolardan birini ayting yoki vaziyat.",
+    "sizga yengillik agarda siz konstani qo'shiqlaridan bir kuplet aaytib berrsayiz siz keyingi shartni bajarishiz shart emas",
+   "O'ziz haqizda hech kim bilmagan narsani ayting.",
+     "Hech qachon noto'g'ri odamga xabar yuborganmisiz? Nima deb yozgandingiz?",
+   "Agar bir kun mashhur odam bilan tushlik qilish imkoniyatingiz bo‘lsa, kimni tanlardingiz?",
+   "Oxirgi ko‘rgan filimingiz sizga qanday ta’sir qildi?",
+   "Siz uchun ideal dam olish kuni qanday bo‘lar edi?",
+   "Qaysi fanni eng ko‘p yoqtirasiz va nega?",
+   "Qaysi sinfdoshingiz bilan darsdan keyin ko‘proq vaqt o‘tkazishni xohlardingiz?",
+   "Maktabdagi qaysi joyda vaqt o‘tkazishni yaxshi ko‘rasiz?",
+   "Qaysi sinfdoshingiz bilan birga sinf kechasi o'tkazishni xohlardingiz?",
+   "Sizga birdan ko'rinmaslik kuchi berilsa, birinchi qiladigan ishingiz nima bo'lardi?",
+   "Agar siz vaqtincha xotirangizni yo'qotsangiz, qaysi sinfdoshingizga ishonasiz?",
+   "Do'stlaringiz bilan o'ynashda har doim qaysi hazilni ishlatasiz?",
+   "Do'stlaringiz bilan o'ynashda har doim qaysi hazilni ishlatasiz?",
+      "Do'stlaringiz bilan birga kulgili o‘yin o‘ynashni xohlaysiz, qanday o‘yinni tanlaysiz?",
+   "Faqat uchta so'z bilan o'zingizni ta'riflang.",
+   "Maktabda qaysi sinfdoshingiz bilan ko'proq urishgansiz.",
+   "Makatbdagi eng unitolmaydigan voqeangiz nima?",
+   "O'zingizning ism-sharifingizni o'zgartirsangiz, qanday yangi ism qo'yardingiz?",
+   "Uchta do'stingizni tanlab, qaysi yangi o'yinni ixtiro qilgan bo'lardingiz?",
+   "O'yin yaratuvchisiga o'z fikringizni ayting o'yin qandayligi xahida.",
+   "Omadli inson ekansiz sizga savolim yo'q",
+        ];
+
+        let daresOffline = [
+            "Ko'zingizni yumib narsa chizing.",
+            "Eng yaxshi qo'shig'ingizni baland ovozda kuylang."
+ "Ko'zingizni yumib, bitta rasm chizing.",
+  "20 marta aylanib, to'g'ri chiziqda yurishga harakat qiling.",
+  "Mashhur shaxs bo'lib, bizning savollarga javob bering.",
+  "Kimdir sizning suratga olishiga ruxsat bering va uni telegram profilingizga joylashtiring.",
+  "10 soniya davomida nafasingizni ushlab turing. (bir nima bo'lsa men javob bermayman)",
+  "Kimdir sizning yuzingizga qalam bilan chizishiga ruxsat bering.",
+  " telefoningizdagi biz tanlab bergan odamga salom deb yuborasiz toki u xayr deb yubormaguncha.",
+  " o'zingiz xohlagan odamning qo'liga yurak chizing, agar qiz bola bo'lsangiz. O'g'il bola bo'lsangiz, o'tkazib yuboring.",
+  " siz  gapirgan har bir vaqtda qulog'i tagiga chapak chalishingiz kerak, toki navbatingiz kelguncha.",
+  ", siz hamma o'yinchiga chiroyli nickname bering va ular uni o'yin oxirigacha ishlatishadi.",
+  "Siz keyingi uchta raundda faqatgina jasoratni tanlashingiz kerak."
+  "Yoningizda bor narsalardan birortasini ayting va o'yinchilar shuni olib kelishi kerak "
+  "Telegramga birorta chiroyli istoriya qo'ying va pastiga #for_you heshtegi bilan qo'ying."
+  "Ko'zingizni yumib Hamma o'yinchini rasmga oling "
+  "O'ng tomonizda o'tigan odamni qo'ligan o'ziz xohlagan narsani chizing"
+  "Eng yaqin do'stizni uchta soz' bilan tariflang"
+  "Sinfingizda eng aqlli, eng ahmoqona, eng ko'p so'kinadigan bollarni ayting"
+  "O'zingizning sevimli qo'shig'ingizdan bir nechta so'zni ovoz chiqarib ayting, boshqa o'yinchilar uni tahmin qilishi kerak."
+  "Jismoniy holatingizni tasvirlab beradigan rasm chizing yoki tarmoqqa joylashtiring."
+ "O'zingizga yangi ism o'ylab toping va o'yinchilar shu ism bilan sizni chaqirsin."
+"O'zingiz tanlagan tasodifiy buyumni qog'ozga chizing va o'yinchilar uni tahmin qilishlari kerak."
+"Yangi va noyob so'z yoki ibora o'ylab toping va uni o'yinchilarga tasvirlab bering, ular bu so'z yoki iborani tahmin qilishlari kerak."
+        ];
+
+        // Event listeners
+        document.getElementById("onlineMode").addEventListener("click", () => startGame("online"));
+        document.getElementById("offlineMode").addEventListener("click", () => startGame("offline"));
+        document.getElementById("addPlayer").addEventListener("click", addPlayer);
+        document.getElementById("startGame").addEventListener("click", beginGame);
+        document.getElementById("truthButton").addEventListener("click", showTruth);
+        document.getElementById("dareButton").addEventListener("click", showDare);
+        document.getElementById("nextPlayer").addEventListener("click", nextPlayer);
+
+        // Add Truth and Dare
+        document.getElementById("addTruthButton").addEventListener("click", () => promptNewItem('rost'));
+        document.getElementById("addDareButton").addEventListener("click", () => promptNewItem('jasorat'));
+
+        function startGame(mode) {
+            gameMode = mode;
+            document.querySelector('.mode-buttons').style.display = 'none';
+            document.getElementById("gameSection").classList.remove('hidden');
+        }
+
+        function addPlayer() {
+            const playerName = document.getElementById("playerName").value.trim();
+            if (playerName !== '') {
+                players.push(playerName);
+                const playerList = document.getElementById("playerList");
+                const li = document.createElement("li");
+                li.textContent = playerName;
+                playerList.appendChild(li);
+                document.getElementById("playerName").value = '';
+
+                if (players.length > 1) {
+                    document.getElementById("startGame").classList.remove("hidden");
+                }
+            }
+        }
+
+        function beginGame() {
+            document.getElementById("startGame").classList.add("hidden");
+            document.getElementById("questionSection").classList.remove("hidden");
+            nextPlayer();
+        }
+
+        function nextPlayer() {
+            if (players.length > 0) {
+                currentPlayerIndex = (currentPlayerIndex + 1) % players.length;
+                document.getElementById("selectedPlayer").textContent = `${players[currentPlayerIndex]}, navbat sizda!`;
+                document.getElementById("question").textContent = '';
+                document.getElementById("nextPlayer").classList.add("hidden");
+            }
+        }
+
+        function showTruth() {
+            const question = gameMode === 'online' ? randomItem(questionsOnline) : randomItem(questionsOffline);
+            document.getElementById("question").textContent = `Rost: ${question}`;
+            document.getElementById("nextPlayer").classList.remove("hidden");
+        }
+
+        function showDare() {
+            const dare = gameMode === 'online' ? randomItem(daresOnline) : randomItem(daresOffline);
+            document.getElementById("question").textContent = `Jasorat: ${dare}`;
+            document.getElementById("nextPlayer").classList.remove("hidden");
+        }
+
+        function promptNewItem(type) {
+            const newItem = prompt(`${type.charAt(0).toUpperCase() + type.slice(1)} kiriting:`);
+            if (newItem) {
+                const modeChoice = prompt("Online rejimga yoki Offline rejimga qo'shmoqchimisiz? (online/offline deb yozing)");
+                if (modeChoice === 'online') {
+                    if (type === 'rost') questionsOnline.push(newItem);
+                    else daresOnline.push(newItem);
+                } else if (modeChoice === 'offline') {
+                    if (type === 'rost') questionsOffline.push(newItem);
+                    else daresOffline.push(newItem);
+                }
+                alert(`${type.charAt(0).toUpperCase() + type.slice(1)} muvaffaqiyatli qo'shildi!`);
+            }
+        }
+
+        function randomItem(array) {
+            return array[Math.floor(Math.random() * array.length)];
+        }
+    </script>
+</body>
+</html>
